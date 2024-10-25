@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
+import toast, { Toaster, ToastOptions } from 'react-hot-toast';
 
 interface Connection {
   connectionId: string;
@@ -15,6 +15,15 @@ interface Message {
 
   connectionId?: string;
 }
+
+const toastStyle: ToastOptions = {
+  duration: 3000,
+  position: 'top-right',
+  style: {
+    background: '#333',
+    color: '#fff',
+  },
+};
 
 const ActiveConnectionsComponent: React.FC = () => {
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -38,17 +47,10 @@ const ActiveConnectionsComponent: React.FC = () => {
         console.log('Received message:', event.data);
         const data: Message = JSON.parse(event.data);
         if (data.message) {
-          toast(data.message, {
-            duration: 3000,
-            position: 'top-right',
-            style: {
-              background: '#333',
-              color: '#fff',
-            },
-          });
+          toast(`${data.message} from ${data.from}!`, toastStyle);
         }
         if (data.connectionId) {
-          console.info(`Own connectionId: ${data.connectionId}`);
+          console.info(`Own connectionId: ${data.connectionId}!`);
           setConnectionId(data.connectionId);
         }
       };
@@ -80,8 +82,7 @@ const ActiveConnectionsComponent: React.FC = () => {
           throw new Error('Failed to fetch connections');
         }
         const data = await response.json();
-        // Sort connections by connectionId
-        const sortedConnections = data.sort((a, b) =>
+        const sortedConnections = data.sort((a: any, b: any) =>
           a.connectionId.localeCompare(b.connectionId)
         );
         setConnections(sortedConnections);
@@ -91,14 +92,8 @@ const ActiveConnectionsComponent: React.FC = () => {
         setLoading(false);
       }
     };
-
-    // Initial fetch
     fetchConnections();
-
-    // Set up polling every 3 seconds
     const intervalId = setInterval(fetchConnections, 3000);
-
-    // Clean up function to clear the interval when the component unmounts
     return () => clearInterval(intervalId);
   }, []);
 
@@ -111,7 +106,7 @@ const ActiveConnectionsComponent: React.FC = () => {
           message: 'Hello World',
         };
         socket.send(JSON.stringify(message));
-        toast.success(`Sent "Hello World" to ${connectionId}`);
+        toast.success(`Sent "Hello World" to ${connectionId}`, toastStyle);
       } else {
         toast.error('WebSocket is not connected');
       }

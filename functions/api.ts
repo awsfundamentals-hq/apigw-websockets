@@ -1,9 +1,10 @@
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDB, Lambda } from 'aws-sdk';
 import { Resource } from 'sst';
 
 const dynamoDB = new DynamoDB.DocumentClient();
+const lambda = new Lambda();
 
-export const handler = async (event: any) => {
+export const handler = async () => {
   try {
     const params = {
       TableName: Resource.connection.name,
@@ -11,6 +12,7 @@ export const handler = async (event: any) => {
     };
 
     const result = await dynamoDB.scan(params).promise();
+    await invokeCronLambda();
 
     return {
       statusCode: 200,
@@ -24,3 +26,17 @@ export const handler = async (event: any) => {
     };
   }
 };
+
+async function invokeCronLambda() {
+    const params = {
+      FunctionName: Resource.cron.name,
+      InvocationType: 'Event',
+    };
+  
+    try {
+      await lambda.invoke(params).promise();
+      console.log('Cron Lambda invoked successfully');
+    } catch (error) {
+      console.error('Error invoking Cron Lambda:', error);
+    }
+  }

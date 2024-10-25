@@ -1,9 +1,9 @@
 import { ApiGatewayManagementApi, DynamoDB } from 'aws-sdk';
-import { Table } from 'sst/node/table';
+import { Resource } from 'sst';
 
 const dynamoDB = new DynamoDB.DocumentClient();
 const api = new ApiGatewayManagementApi({
-  endpoint: process.env.WEBSOCKET_API_URL,
+  endpoint: process.env.WEBSOCKET_URL,
 });
 
 export async function handler() {
@@ -26,7 +26,7 @@ export async function handler() {
 
 async function loadConnections(): Promise<string[]> {
   const params = {
-    TableName: Table.Connections.tableName,
+    TableName: Resource.connection.name,
   };
 
   const result = await dynamoDB.scan(params).promise();
@@ -57,7 +57,7 @@ async function sendToAllConnections(connections: string[]) {
 
 async function removeConnection(connectionId: string) {
   const params = {
-    TableName: Table.Connections.tableName,
+    TableName: Resource.connection.name,
     Key: { connectionId },
   };
 

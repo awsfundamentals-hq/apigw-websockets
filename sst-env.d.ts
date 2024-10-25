@@ -15,6 +15,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Dynamo"
     }
+    "cron": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
     "frontend": {
       "type": "sst.aws.Nextjs"
       "url": string

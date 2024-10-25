@@ -1,11 +1,12 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { ApiGatewayManagementApi, DynamoDB } from 'aws-sdk';
+import { ApiGatewayManagementApi, DynamoDB, Lambda } from 'aws-sdk';
 import { Resource } from 'sst';
 
 const dynamoDB = new DynamoDB.DocumentClient();
 const apiGateway = new ApiGatewayManagementApi({
   endpoint: process.env.WEBSOCKET_URL,
 });
+const lambda = new Lambda();
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   const { connectionId, routeKey } = event.requestContext;
@@ -16,6 +17,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   if (routeKey === '$connect') {
     await saveConnection(connectionId);
+    await invokeCronLambda();
     return {
       statusCode: 200,
       body: JSON.stringify({ message: 'Connected', connectionId }),
@@ -84,5 +86,19 @@ async function sendMessage(params: {
     } else {
       throw error;
     }
+  }
+}
+
+async function invokeCronLambda() {
+  const params = {
+    FunctionName: Resource.cron.name,
+    InvocationType: 'Event',
+  };
+
+  try {
+    await lambda.invoke(params).promise();
+    console.log('Cron Lambda invoked successfully');
+  } catch (error) {
+    console.error('Error invoking Cron Lambda:', error);
   }
 }

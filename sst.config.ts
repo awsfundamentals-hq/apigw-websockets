@@ -17,22 +17,7 @@ export default $config({
       ttl: 'timestamp',
     });
 
-    const api = new sst.aws.Function('api', {
-      handler: 'functions/api.handler',
-      link: [table],
-      url: true,
-    });
-
     const webSocketApi = new sst.aws.ApiGatewayWebSocket('ws-api');
-
-    const cron = new sst.aws.Cron('cron', {
-      schedule: 'rate(1 minute)',
-      job: {
-        handler: 'functions/cron.handler',
-        timeout: '60 seconds',
-        link: [table],
-      },
-    });
 
     const environment = {
       WEBSOCKET_URL: webSocketApi.managementEndpoint,
@@ -49,6 +34,23 @@ export default $config({
         resources: ['*'],
       },
     ];
+
+    const cron = new sst.aws.Function('cron', {
+      handler: 'functions/cron.handler',
+      timeout: '60 seconds',
+      link: [table],
+      environment,
+      permissions,
+    });
+
+    const api = new sst.aws.Function('api', {
+      handler: 'functions/api.handler',
+      link: [table, cron],
+      url: true,
+      environment,
+      permissions,
+    });
+
     webSocketApi.route('$connect', {
       handler: 'functions/connections.handler',
       environment,
@@ -64,14 +66,14 @@ export default $config({
     webSocketApi.route('$default', {
       handler: 'functions/connections.handler',
       environment,
-      link: [table],
       permissions,
+      link: [table],
     });
     webSocketApi.route('send', {
       handler: 'functions/connections.handler',
       environment,
-      link: [table],
       permissions,
+      link: [table],
     });
 
     new sst.aws.Nextjs('frontend', {
