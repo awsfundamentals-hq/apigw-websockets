@@ -18,16 +18,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   if (routeKey === '$connect') {
     await saveConnection(connectionId);
     await invokeCronLambda();
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Connected', connectionId }),
-    };
   } else if (routeKey === '$disconnect') {
     await deleteConnection(connectionId);
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Disconnected' }),
-    };
   } else if (routeKey === 'send') {
     const {
       message,
@@ -36,13 +28,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       event.body as string
     );
     await sendMessage({ message, connectionId, targetId });
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Message sent' }),
-    };
+  } else {
+    return { statusCode: 400, body: 'Unsupported route' };
   }
-
-  return { statusCode: 400, body: 'Unsupported route' };
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ message: 'Success' }),
+  };
 };
 
 async function saveConnection(connectionId: string) {
